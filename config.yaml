@@ -1,0 +1,14 @@
+# Config mounted into the container — all terminal commands run inside
+# ghcr.io/phantomic12/dev-container:latest via the docker backend.
+
+model:
+  default: MiniMax-M2.7
+  provider: minimax
+  base_url: https://api.minimax.io/anthropic
+
+terminal:
+  backend: docker
+  docker_image: ghcr.io/phantomic12/dev-container:latest
+  timeout: 180
+  # Uncomment to persist shell between commands (faster startup after the first)
+  # persistent_shell: true

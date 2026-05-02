@@ -1,0 +1,39 @@
+# Standalone Hermes Agent with your custom dev container
+#
+# Usage:
+#   cp .env.example .env
+#   # edit .env with your values
+#   docker compose up -d
+#
+# This runs hermes-agent with terminal.backend=docker, executing all commands
+# inside ghcr.io/phantomic12/dev-container:latest.
+
+services:
+  hermes-agent:
+    image: ghcr.io/phantomic12/dev-container:latest
+    container_name: hermes-agent
+    command: >
+      bash -c "
+        # Install hermes-agent inside the container
+        pip install --break-system-packages git+https://github.com/NousResearch/hermes-agent.git &&
+        hermes gateway run
+      "
+    ports:
+      - "8642:8642"
+    volumes:
+      # Mount your filled-in .env so hermes picks up API keys
+      - ./.env:/root/.hermes/.env:ro
+      # Mount config.yaml with terminal.backend=docker + your docker_image
+      - ./config.yaml:/root/.hermes/config.yaml:ro
+      # Workspace — change HOST_WORKSPACE to a path on your host
+      - ${HOST_WORKSPACE:-$(pwd)/workspace}:/workspace
+    environment:
+      - HERMES_HOME=/root/.hermes
+      # Pass through MINIMAX_API_KEY etc. from .env into the container
+      - HERMES_ENV_PASSTHROUGH=true
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: "2.0"
