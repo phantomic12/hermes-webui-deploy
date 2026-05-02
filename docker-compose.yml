@@ -10,7 +10,7 @@
 services:
   hermes-agent:
     image: ghcr.io/phantomic12/dev-container:latest
-    container_name: hermes-agent
+    user: root
     # Find hermes (pip installs to /home/dev/.local/bin for dev user, /root/.local/bin for root)
     command: >
       bash -c "
