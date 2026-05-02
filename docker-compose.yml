@@ -24,13 +24,14 @@ services:
       - "8642:8642"
     volumes:
       # Reuse the existing hermes-home volume (contains .env with API keys, auth, skills, sessions)
-      - hermes-webui_hermes-home:/home/hermes/.hermes
+      # Mount at /home/dev/.hermes so the dev user (uid 1001) can read it
+      - hermes-webui_hermes-home:/home/dev/.hermes
       # Mount the config.yaml with terminal.backend=docker + docker_image
-      - ./config.yaml:/home/hermes/.hermes/config.yaml:ro
+      - ./config.yaml:/home/dev/.hermes/config.yaml:ro
       # Workspace — change HOST_WORKSPACE to your projects directory
       - ${HOST_WORKSPACE:-/home/yoav/workspace}:/workspace
     environment:
-      - HERMES_HOME=/home/hermes/.hermes
+      - HERMES_HOME=/home/dev/.hermes
     restart: unless-stopped
     deploy:
       resources:
