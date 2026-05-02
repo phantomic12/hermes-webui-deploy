@@ -1,39 +1,69 @@
-# Standalone Hermes Agent with your custom dev container
+# Standalone Hermes Agent with your custom dev container.
+# Reuses the existing hermes-home volume so all secrets carry over.
 #
 # Usage:
-#   cp .env.example .env
-#   # edit .env with your values
+#   cp .env.example .env   (fill in at minimum API_SERVER_KEY)
 #   docker compose up -d
 #
-# This runs hermes-agent with terminal.backend=docker, executing all commands
-# inside ghcr.io/phantomic12/dev-container:latest.
+# All terminal commands run inside ghcr.io/phantomic12/dev-container:latest.
 
 services:
   hermes-agent:
     image: ghcr.io/phantomic12/dev-container:latest
     container_name: hermes-agent
+    # Find hermes (pip installs to /home/dev/.local/bin for dev user, /root/.local/bin for root)
     command: >
       bash -c "
-        # Install hermes-agent inside the container
-        pip install --break-system-packages git+https://github.com/NousResearch/hermes-agent.git &&
+        export PATH=/home/dev/.local/bin:/root/.local/bin:$PATH &&
+        if ! command -v hermes >/dev/null 2>&1; then
+          pip install --break-system-packages git+https://github.com/NousResearch/hermes-agent.git;
+        fi &&
         hermes gateway run
       "
     ports:
       - "8642:8642"
     volumes:
-      # Mount your filled-in .env so hermes picks up API keys
-      - ./.env:/root/.hermes/.env:ro
-      # Mount config.yaml with terminal.backend=docker + your docker_image
-      - ./config.yaml:/root/.hermes/config.yaml:ro
-      # Workspace — change HOST_WORKSPACE to a path on your host
-      - ${HOST_WORKSPACE:-$(pwd)/workspace}:/workspace
+      # Reuse the existing hermes-home volume (contains .env with API keys, auth, skills, sessions)
+      - hermes-webui_hermes-home:/home/hermes/.hermes
+      # Mount the config.yaml with terminal.backend=docker + docker_image
+      - ./config.yaml:/home/hermes/.hermes/config.yaml:ro
+      # Workspace — change HOST_WORKSPACE to your projects directory
+      - ${HOST_WORKSPACE:-/home/yoav/workspace}:/workspace
     environment:
-      - HERMES_HOME=/root/.hermes
-      # Pass through MINIMAX_API_KEY etc. from .env into the container
-      - HERMES_ENV_PASSTHROUGH=true
+      - HERMES_HOME=/home/hermes/.hermes
     restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 4G
           cpus: "2.0"
+    networks:
+      - hermes-net
+
+  hermes-webui:
+    image: ghcr.io/nesquena/hermes-webui:latest
+    container_name: hermes-webui
+    depends_on:
+      - hermes-agent
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - hermes-webui_hermes-home:/home/hermeswebui/.hermes
+      - ${HERMES_WORKSPACE:-/home/yoav/workspace}:/workspace
+    environment:
+      - HERMES_WEBUI_HOST=0.0.0.0
+      - HERMES_WEBUI_PORT=8787
+      - HERMES_WEBUI_STATE_DIR=/home/hermeswebui/.hermes/webui
+      - WANTED_UID=${UID:-1000}
+      - WANTED_GID=${GID:-1000}
+    restart: unless-stopped
+    networks:
+      - hermes-net
+
+networks:
+  hermes-net:
+    driver: bridge
+
+volumes:
+  hermes-webui_hermes-home:
+    external: true
