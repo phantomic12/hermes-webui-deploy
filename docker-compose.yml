@@ -47,7 +47,7 @@ services:
     depends_on:
       - hermes-agent
     ports:
-      - "127.0.0.1:8787:8787"
+      - "8787:8787"
     volumes:
       - hermes-webui_hermes-home:/home/hermeswebui/.hermes
       - ${HERMES_WORKSPACE:-/home/yoav/workspace}:/workspace
