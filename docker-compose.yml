@@ -1,37 +1,16 @@
-# Standalone Hermes Agent with your custom dev container.
-# Reuses the existing hermes-home volume so all secrets carry over.
-#
-# Usage:
-#   cp .env.example .env   (fill in at minimum API_SERVER_KEY)
-#   docker compose up -d
-#
-# All terminal commands run inside ghcr.io/phantomic12/dev-container:latest.
-
 services:
   hermes-agent:
-    image: ghcr.io/phantomic12/dev-container:latest
+    image: nousresearch/hermes-agent:latest
     user: root
-    # Find hermes (pip installs to /home/dev/.local/bin for dev user, /root/.local/bin for root)
-    command: >
-      bash -c "
-        export PATH=/home/dev/.local/bin:/root/.local/bin:$PATH &&
-        if ! command -v hermes >/dev/null 2>&1; then
-          pip install --break-system-packages git+https://github.com/NousResearch/hermes-agent.git;
-        fi &&
-        hermes gateway run
-      "
+    command: hermes gateway run
     ports:
       - "8642:8642"
     volumes:
-      # Reuse the existing hermes-home volume (contains .env with API keys, auth, skills, sessions)
-      # Mount at /home/dev/.hermes so the dev user (uid 1001) can read it
-      - hermes-webui_hermes-home:/home/dev/.hermes
-      # Mount the config.yaml with terminal.backend=docker + docker_image
-      - ./config.yaml:/home/dev/.hermes/config.yaml:ro
-      # Workspace — change HOST_WORKSPACE to your projects directory
+      - hermes-webui_hermes-home:/opt/data
+      - ./config.yaml:/opt/data/config.yaml:ro
       - ${HOST_WORKSPACE:-/home/yoav/workspace}:/workspace
     environment:
-      - HERMES_HOME=/home/dev/.hermes
+      - HERMES_HOME=/opt/data
     restart: unless-stopped
     deploy:
       resources:
@@ -45,6 +24,8 @@ services:
     image: ghcr.io/nesquena/hermes-webui:latest
     container_name: hermes-webui
     depends_on:
+      - hermes-agent
+    links:
       - hermes-agent
     ports:
       - "8787:8787"
