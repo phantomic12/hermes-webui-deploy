@@ -2,21 +2,35 @@ services:
   hermes-agent:
     image: nousresearch/hermes-agent:latest
     user: root
+    network_mode: host
     command: hermes gateway run
     ports:
       - "8642:8642"
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - hermes-webui_hermes-home:/opt/data
       - ./config.yaml:/opt/data/config.yaml:ro
-      - ${HOST_WORKSPACE:-/home/yoav/workspace}:/workspace
+      - /home/yoav/workspace:/workspace
     environment:
       - HERMES_HOME=/opt/data
+      - API_SERVER_HOST=0.0.0.0
     restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 4G
           cpus: "2.0"
+
+  dev-container:
+    image: ghcr.io/phantomic12/dev-container:latest
+    user: root
+    command: sleep infinity
+    volumes:
+      - hermes-webui_hermes-home:/home/dev/.hermes
+      - /home/yoav/workspace:/workspace
+    environment:
+      - HERMES_HOME=/home/dev/.hermes
+    restart: unless-stopped
     networks:
       - hermes-net
 
@@ -25,19 +39,17 @@ services:
     container_name: hermes-webui
     depends_on:
       - hermes-agent
-    links:
-      - hermes-agent
     ports:
       - "8787:8787"
     volumes:
       - hermes-webui_hermes-home:/home/hermeswebui/.hermes
-      - ${HERMES_WORKSPACE:-/home/yoav/workspace}:/workspace
+      - /home/yoav/workspace:/workspace
     environment:
       - HERMES_WEBUI_HOST=0.0.0.0
       - HERMES_WEBUI_PORT=8787
       - HERMES_WEBUI_STATE_DIR=/home/hermeswebui/.hermes/webui
-      - WANTED_UID=${UID:-1000}
-      - WANTED_GID=${GID:-1000}
+      - WANTED_UID=1000
+      - WANTED_GID=1000
     restart: unless-stopped
     networks:
       - hermes-net
