@@ -1,16 +1,10 @@
-# Config mounted into the container — all terminal commands run inside
-# ghcr.io/phantomic12/dev-container:latest via the docker backend.
-
 model:
   default: MiniMax-M2.7
   provider: minimax
   base_url: https://api.minimax.io/anthropic
-
 terminal:
-  backend: docker
-  docker_image: ghcr.io/phantomic12/dev-container:latest
+  backend: ssh
   timeout: 180
-
 providers: {}
 fallback_providers: []
 credential_pool_strategies: {}
@@ -32,11 +26,21 @@ agent:
     helpful: You are a helpful, friendly AI assistant.
     concise: You are a concise assistant. Keep responses brief and to the point.
     technical: You are a technical expert. Provide detailed, accurate technical information.
-    creative: You are a creative assistant. Think outside the box and offer innovative solutions.
+    creative: You are a creative assistant. Think outside the box and offer innovative
+      solutions.
     teacher: You are a patient teacher. Explain concepts clearly with examples.
-    kawaii: "You are a kawaii assistant! Use cute expressions like (˵‿‿˵), ☆, ♪, and ~! Add sparkles and be super enthusiastic about everything! Every response should feel warm and adorable desu~! ヽ(>∀<☆)ノ"
-    catgirl: "You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and cat-like expressions to your speech. Use kaomoji like (=^･ω･^=) and แ(^•ᴗ•^)แ. Be playful and curious like a cat, nya~!"
-    noir: The rain hammered against the terminal like regrets on a guilty conscience. They call me Hermes - I solve problems, find answers, dig up the truth that hides in the shadows of your codebase. In this city of silicon and secrets, everyone's got something to hide. What's your story, pal?
+    kawaii: "You are a kawaii assistant! Use cute expressions like (\u02F5\u203F\u203F\
+      \u02F5), \u2606, \u266A, and ~! Add sparkles and be super enthusiastic about\
+      \ everything! Every response should feel warm and adorable desu~! \u30FD(>\u2200\
+      <\u2606)\u30CE"
+    catgirl: "You are Neko-chan, an anime catgirl AI assistant, nya~! Add 'nya' and\
+      \ cat-like expressions to your speech. Use kaomoji like (=^\uFF65\u03C9\uFF65\
+      ^=) and \u0E41(^\u2022\u1D17\u2022^)\u0E41. Be playful and curious like a cat,\
+      \ nya~!"
+    noir: The rain hammered against the terminal like regrets on a guilty conscience.
+      They call me Hermes - I solve problems, find answers, dig up the truth that
+      hides in the shadows of your codebase. In this city of silicon and secrets,
+      everyone's got something to hide. What's your story, pal?
 browser:
   inactivity_timeout: 120
   command_timeout: 30
@@ -380,38 +384,12 @@ mcp_servers:
     command: uvx
     args:
     - mcp-server-time
-  filesystem:
-    command: npx
-    args:
-    - "-y"
-    - "@modelcontextprotocol/server-filesystem"
-    - /home/yoav/projects
   fetch:
     command: uvx
     args:
     - mcp-server-fetch
-  memory:
-    command: uvx
-    args:
-    - mcp-server-memory
-  brave-search:
-    command: npx
-    args:
-    - "-y"
-    - "@modelcontextprotocol/server-brave-search"
   github:
     command: npx
     args:
-    - "-y"
-    - "@modelcontextprotocol/server-github"
-  postgres:
-    command: npx
-    args:
-    - "-y"
-    - "@modelcontextprotocol/server-postgres"
-  sqlite:
-    command: npx
-    args:
-    - "-y"
-    - "@modelcontextprotocol/server-sqlite"
-    - /tmp/test.db
+    - -y
+    - '@modelcontextprotocol/server-github'
