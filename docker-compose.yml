@@ -22,16 +22,12 @@ services:
       - TERMINAL_SSH_HOST=dev-container
       - TERMINAL_SSH_USER=dev
       - TERMINAL_SSH_KEY=/ssh_key
-      - CAMOFOX_API_KEY=
-      - FIRECRAWL_API_KEY=
-      - MINIMAX_API_HOST=https://api.minimax.io/
-      - MINIMAX_API_KEY=
     restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 4G
-          cpus: '2.0'
+          cpus: "2.0"
   dev-container:
     image: ghcr.io/phantomic12/dev-container:latest
     user: root
@@ -44,17 +40,19 @@ services:
       - SSH_AUTHORIZED_KEYS=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKK3VMTZbaJprw1Rr5gMvfvV8UIAqsc4ts9tGgSPZAvy hermes-agent-to-dev-container
       - DEV_PASSWORD=hermes-dev123
       - SSH_PORT=2222
-      - GH_TOKEN=
-      - TAILSCALE_AUTH_KEY=
-      - CLOUDFLARE_API_KEY=
-      - CLOUDFLARE_ACCOUNT_ID=
+      - GH_TOKEN=${GH_TOKEN}
+      - TAILSCALE_AUTH_KEY=${TAILSCALE_AUTH_KEY}
+      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
+      - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
       - BROWSER_PROFILE_DIR=/browser-profile
-      - BROWSER_RESOLUTION=
-      - MINIMAX_API_HOST=https://api.minimax.io/
-      - MINIMAX_API_KEY=
+      - BROWSER_RESOLUTION=${BROWSER_RESOLUTION}
+      - MINIMAX_API_HOST=${MINIMAX_API_HOST}
+      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
     restart: unless-stopped
     networks:
-      - hermes-net
+      hermes-net:
+        aliases:
+          - dev-container
     expose:
       - "2222"
   hermes-webui:
