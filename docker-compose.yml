@@ -5,49 +5,59 @@ services:
     networks:
       hermes-net:
         ipv4_address: 172.29.0.10
+        aliases:
+          - hermes-agent
     command: hermes gateway run
     ports:
       - "8642:8642"
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/local/bin/docker:ro
       - hermes-webui_hermes-home:/opt/data
-      - ./config.yaml:/opt/data/config.yaml:ro
+      - ./config.yaml:/opt/data/config.yaml:rw
       - /home/yoav/workspace:/workspace
       - hermes-agent-src:/opt/hermes
-      - ./ssh_key:/ssh_key:ro
+      - ./ssh_key:/opt/data/ssh_key:ro
     env_file:
       - ./.env
     environment:
       - HERMES_HOME=/opt/data
       - API_SERVER_HOST=0.0.0.0
+      - GATEWAY_ALLOW_ALL_USERS=true
+      - TERMINAL_ENV=ssh
       - TERMINAL_SSH_HOST=dev-container
+      - TERMINAL_SSH_PORT=2222
       - TERMINAL_SSH_USER=dev
-      - TERMINAL_SSH_KEY=/ssh_key
+      - TERMINAL_SSH_KEY=/opt/data/ssh_key
     restart: unless-stopped
     deploy:
       resources:
         limits:
           memory: 4G
           cpus: "2.0"
+
   dev-container:
-    image: ghcr.io/phantomic12/dev-container:latest
+    image: ghcr.io/phantomic12/dev-container:local
     user: root
-    command: sleep infinity
+    entrypoint: /bin/bash
+    command: >-
+      -c "set -e;
+      mkdir -p /run/sshd /home/dev/.ssh && chmod 755 /run/sshd && chmod 700 /home/dev/.ssh;
+      if [ ! -f /run/sshd/ssh_host_ed25519_key ]; then ssh-keygen -t ed25519 -f /run/sshd/ssh_host_ed25519_key -N '' -o; fi && chmod 600 /run/sshd/ssh_host_ed25519_key && chmod 644 /run/sshd/ssh_host_ed25519_key.pub;
+      if [ ! -f /home/dev/.ssh/authorized_keys ]; then cp /opt/data/ssh_key.pub /home/dev/.ssh/authorized_keys && chmod 600 /home/dev/.ssh/authorized_keys; fi;
+      chown -R dev:docker /home/dev/.ssh;
+      /usr/sbin/sshd -h /run/sshd/ssh_host_ed25519_key -p 2222;
+      sleep infinity"
     volumes:
+      - hermes-webui_hermes-home:/opt/data
       - hermes-webui_hermes-home:/home/dev/.hermes
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/local/bin/docker:ro
       - /home/yoav/workspace:/workspace
+      - ./ssh_key.pub:/opt/data/ssh_key.pub:ro
     environment:
       - HERMES_HOME=/home/dev/.hermes
-      - SSH_AUTHORIZED_KEYS=ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKK3VMTZbaJprw1Rr5gMvfvV8UIAqsc4ts9tGgSPZAvy hermes-agent-to-dev-container
-      - DEV_PASSWORD=hermes-dev123
       - SSH_PORT=2222
-      - GH_TOKEN=${GH_TOKEN}
-      - TAILSCALE_AUTH_KEY=${TAILSCALE_AUTH_KEY}
-      - CLOUDFLARE_API_KEY=${CLOUDFLARE_API_KEY}
-      - CLOUDFLARE_ACCOUNT_ID=${CLOUDFLARE_ACCOUNT_ID}
-      - BROWSER_PROFILE_DIR=/browser-profile
-      - BROWSER_RESOLUTION=${BROWSER_RESOLUTION}
-      - MINIMAX_API_HOST=${MINIMAX_API_HOST}
-      - MINIMAX_API_KEY=${MINIMAX_API_KEY}
     restart: unless-stopped
     networks:
       hermes-net:
@@ -55,6 +65,7 @@ services:
           - dev-container
     expose:
       - "2222"
+
   hermes-webui:
     image: ghcr.io/nesquena/hermes-webui:latest
     user: root
@@ -62,10 +73,12 @@ services:
     depends_on:
       - hermes-agent
     ports:
-      - 8787:8787
+      - "8787:8787"
     volumes:
       - hermes-webui_hermes-home:/home/hermeswebui/.hermes
       - ./config.yaml:/home/hermeswebui/.hermes/config.yaml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /usr/bin/docker:/usr/local/bin/docker:ro
       - /home/yoav/workspace:/workspace
       - hermes-agent-src:/home/hermeswebui/.hermes/hermes-agent
     env_file:
@@ -76,13 +89,19 @@ services:
       - HERMES_WEBUI_PORT=8787
       - HERMES_WEBUI_STATE_DIR=/home/hermeswebui/.hermes/webui
       - WANTED_UID=0
+      - TERMINAL_ENV=docker
+      - TERMINAL_DOCKER_IMAGE=ghcr.io/phantomic12/dev-container:local
+      - TERMINAL_DOCKER_RUN_AS_HOST_USER=true
+      - TERMINAL_DOCKER_VOLUMES=["/var/run/docker.sock:/var/run/docker.sock"]
       - WANTED_GID=0
     restart: unless-stopped
     networks:
       - hermes-net
+
 networks:
   hermes-net:
     driver: bridge
+
 volumes:
   hermes-webui_hermes-home:
     external: true
