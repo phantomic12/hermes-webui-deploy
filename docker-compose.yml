@@ -17,7 +17,8 @@ services:
       - ./config.yaml:/opt/data/config.yaml:rw
       - /home/yoav/workspace:/workspace
       - hermes-agent-src:/opt/hermes
-      - ./ssh_key:/opt/data/ssh_key:ro
+      - ./ssh_key:/opt/secrets/ssh_key:ro
+      - ./ssh_key.pub:/opt/secrets/ssh_key.pub:ro
     env_file:
       - ./.env
     environment:
@@ -28,7 +29,7 @@ services:
       - TERMINAL_SSH_HOST=dev-container
       - TERMINAL_SSH_PORT=2222
       - TERMINAL_SSH_USER=dev
-      - TERMINAL_SSH_KEY=/opt/data/ssh_key
+      - TERMINAL_SSH_KEY=/opt/secrets/ssh_key
     restart: unless-stopped
     deploy:
       resources:
@@ -44,7 +45,7 @@ services:
       -c "set -e;
       mkdir -p /run/sshd /home/dev/.ssh && chmod 755 /run/sshd && chmod 700 /home/dev/.ssh;
       if [ ! -f /run/sshd/ssh_host_ed25519_key ]; then ssh-keygen -t ed25519 -f /run/sshd/ssh_host_ed25519_key -N '' -o; fi && chmod 600 /run/sshd/ssh_host_ed25519_key && chmod 644 /run/sshd/ssh_host_ed25519_key.pub;
-      if [ ! -f /home/dev/.ssh/authorized_keys ]; then cp /opt/data/ssh_key.pub /home/dev/.ssh/authorized_keys && chmod 600 /home/dev/.ssh/authorized_keys; fi;
+      if [ ! -f /home/dev/.ssh/authorized_keys ]; then cp /opt/secrets/ssh_key.pub /home/dev/.ssh/authorized_keys && chmod 600 /home/dev/.ssh/authorized_keys; fi;
       chown -R dev:docker /home/dev/.ssh;
       /usr/sbin/sshd -h /run/sshd/ssh_host_ed25519_key -p 2222;
       sleep infinity"
@@ -54,7 +55,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /usr/bin/docker:/usr/local/bin/docker:ro
       - /home/yoav/workspace:/workspace
-      - ./ssh_key.pub:/opt/data/ssh_key.pub:ro
+      - ./ssh_key.pub:/opt/secrets/ssh_key.pub:ro
     environment:
       - HERMES_HOME=/home/dev/.hermes
       - SSH_PORT=2222
